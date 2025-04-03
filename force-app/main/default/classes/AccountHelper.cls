@@ -1,46 +1,70 @@
-/*
-AccountHelper Overview
-
-The `AccountHelper` class is designed to provide helper methods that assist in performing specific operations on Account records. 
-This class is intended to modularize the logic used in the `AccountTrigger` to ensure separation of concerns, improve readability, and ease maintenance. 
-
-This class is currently stubbed out. As part of this exercise, you are expected to:
-1. Implement the method bodies to carry out the specified operations on Account records.
-2. Refactor the `AccountTrigger` to utilize the methods provided in this `AccountHelper` class.
-
-Methods:
-- `setTypeProspect(SObject objects)`: 
-    - Purpose: Update the 'Type' field of the given Account record to 'Prospect' if it's not already set.
-    - Note: You'll likely need to adjust the method signature to accept the necessary parameters.
-
-- `addressCopy()`: 
-    - Purpose: Copy the shipping address of the Account to its billing address. 
-    - Note: You'll likely need to adjust the method signature to accept the necessary parameters.
-
-- `setRating`: 
-    - Purpose: Evaluate certain conditions on the Account and assign a rating based on that evaluation. You'll need to define the method's signature and implement its logic.
-
-- `defaultContact`: 
-    - Purpose: Create a default contact related to the Account after the Account is inserted. You'll need to define the method's signature and implement its logic.
-
-Remember:
-Always ensure that your helper methods are bulk-safe to handle multiple records efficiently. 
-*/
 public with sharing class AccountHelper {
     
-    public void setTypeProspect(SObject objects){
-
+    /**
+     * Sets the Type field to 'Prospect' for Account records where Type is null
+     * @param objects List of Account records to process (as SObject to maintain original method signature)
+     */
+    public void setTypeProspect(List<SObject> objects){
+        for (SObject obj : objects) {
+            Account acc = (Account)obj;
+            if (acc.Type == null) {
+                acc.Type = 'Prospect';
+            }
+        }
     }
 
-    void addressCopy(){
-
+    /**
+     * Copies the shipping address fields to the corresponding billing address fields
+     * @param accounts List of Account records to process
+     */
+    public void addressCopy(List<Account> accounts){
+        for (Account acc : accounts) {
+            if (acc.ShippingStreet != null) {
+                acc.BillingStreet = acc.ShippingStreet;
+            }
+            if (acc.ShippingCity != null) {
+                acc.BillingCity = acc.ShippingCity;
+            }
+            if (acc.ShippingState != null) {
+                acc.BillingState = acc.ShippingState;
+            }
+            if (acc.ShippingPostalCode != null) {
+                acc.BillingPostalCode = acc.ShippingPostalCode;
+            }
+            if (acc.ShippingCountry != null) {
+                acc.BillingCountry = acc.ShippingCountry;
+            }
+        }
     }
 
-    //[public | private ] [static] data_type setRating (input parameters) {
-    //  The body of the method
-    //}
+    /**
+     * Sets the Rating field to 'Hot' for Account records if Phone, Website, and Fax are all filled
+     * @param accounts List of Account records to process
+     */
+    public void setRating(List<Account> accounts) {
+        for (Account acc : accounts) {
+            if (acc.Phone != null && acc.Website != null && acc.Fax != null) {
+                acc.Rating = 'Hot';
+            }
+        }
+    }
 
-    //[public | private ] [static] data_type defaultContact (input parameters) {
-    //  The body of the method
-    //}
+    /**
+     * Creates default Contact records for each Account in the list
+     * @param accounts List of Account records to create Contacts for
+     */
+    public void defaultContact(List<Account> accounts) {
+        List<Contact> contacts = new List<Contact>();
+        for (Account acc : accounts) {
+            Contact con = new Contact(
+                LastName = 'DefaultContact',
+                Email = 'default@email.com',
+                AccountId = acc.Id
+            );
+            contacts.add(con);
+        }
+        if (!contacts.isEmpty()) {
+            insert contacts;
+        }
+    }
 }
